@@ -1,0 +1,4 @@
+.vscode/
+*.exe
+rss_aggegator.exe
+.env
