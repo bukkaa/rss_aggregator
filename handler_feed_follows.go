@@ -30,7 +30,7 @@ func (apiCfg *apiConfig) handlerCreateFeedFollows(w http.ResponseWriter, r *http
 }
 
 func parseFeedFollowsParams(r *http.Request, w http.ResponseWriter) feedFollowsParams {
-	params := feedParams{}
+	params := feedFollowsParams{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&params)
 	if err != nil {
