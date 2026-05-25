@@ -71,3 +71,41 @@ func newFeedFollowsDto(entity database.FeedFollow) FeedFollowsDto {
 		UpdatedAt: entity.UpdatedAt,
 	}
 }
+
+type PostDto struct {
+	ID          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	Description *string   `json:"description"`
+	PublishedAt time.Time `json:"published_at"`
+	Url         string    `json:"url"`
+	FeedID      uuid.UUID `json:"feed_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func newPostDto(entity database.GetPostsForUserRow) PostDto {
+	var descr *string
+	if entity.Description.Valid {
+		descr = &entity.Description.String
+	}
+	
+	return PostDto{
+		ID:          entity.ID,
+		Title:       entity.Title,
+		Description: descr,
+		PublishedAt: entity.PublishedAt,
+		Url:         entity.Url,
+		FeedID:      entity.FeedID,
+		CreatedAt:   entity.CreatedAt,
+		UpdatedAt:   entity.UpdatedAt,
+	}
+}
+
+func newListPostsDto(entities []database.GetPostsForUserRow) []PostDto {
+	result := []PostDto{}
+	for _, postEntity := range entities {
+		result = append(result, newPostDto(postEntity))
+	}
+
+	return result
+}

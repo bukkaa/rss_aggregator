@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/bukkaa/rss_aggregator/internal/auth"
 	"github.com/bukkaa/rss_aggregator/internal/database"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -51,6 +53,26 @@ func (apiCfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Reques
 	}
 
 	respondWithJson(w, 200, newUserDto(userEntity))
+}
+
+func (apiCfg *apiConfig) handlerGetPostsForUser(w http.ResponseWriter, r *http.Request, userEntity database.User) {
+	amount := 5
+
+	amountStr := chi.URLParam(r, "amount")
+	if amountStr != "" {
+		amount, _ = strconv.Atoi(amountStr)
+	}
+
+	posts, err := apiCfg.DB.GetPostsForUser(r.Context(), database.GetPostsForUserParams{
+		UserID: userEntity.ID,
+		Limit:  int32(amount),
+	})
+
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Couldn't load fresh posts for user [%v]: %v", userEntity.ID, err))
+		return
+	}
+	respondWithJson(w, 200, newListPostsDto(posts))
 }
 
 func parseUserParams(r *http.Request, w http.ResponseWriter) userParams {

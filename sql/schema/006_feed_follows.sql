@@ -1,5 +1,4 @@
 -- +goose Up
-
 create table feed_follows (
     id UUID primary key,
     user_id UUID not null references users(id) on delete cascade,

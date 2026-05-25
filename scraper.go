@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/bukkaa/rss_aggregator/internal/database"
+	"github.com/google/uuid"
 )
 
 func startScraping(db *database.Queries, concurrency int, cooldown time.Duration) {
@@ -62,8 +65,34 @@ func scrapeFeed(db *database.Queries, feed database.Feed, wg *sync.WaitGroup) {
 		return
 	}
 
-	// for _, feedItem := range rssFeed.Channel.Item {
-		// log.Println("Found post ", feedItem.Title, " on feed ", feed.Name)
-	// }
+	for _, feedItem := range rssFeed.Channel.Item {
+		descr := sql.NullString{}
+		if feedItem.Description != "" {
+			descr.String = feedItem.Description
+			descr.Valid = true
+		}
+
+		publishedAt, err := time.Parse(time.RFC1123Z, feedItem.PublicationDate)
+		if err != nil {
+			log.Printf("couldn't parse date [%v], msg: %v\n", feedItem.PublicationDate, err)
+			continue
+		}
+
+		_, err = db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			Title:       feedItem.Title,
+			Description: descr,
+			PublishedAt: publishedAt,
+			Url:         feedItem.Link,
+			FeedID:      feed.ID,
+		})
+
+		if err != nil {
+			if !strings.Contains(err.Error(), "duplicate key") {
+				log.Println("couldn't create post", err)
+			}
+			continue
+		}
+	}
 	log.Printf("Great! Feed %s collected, %d posts from! \n", feed.Name, len(rssFeed.Channel.Item))
 }
