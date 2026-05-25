@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/bukkaa/rss_aggregator/internal/database"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -28,6 +29,27 @@ func (apiCfg *apiConfig) handlerCreateFeedFollows(w http.ResponseWriter, r *http
 
 	respondWithJson(w, 201, newFeedFollowsDto(feedFollowEntity))
 }
+
+func (apiCfg *apiConfig) handlerDeleteFeedFollows(w http.ResponseWriter, r *http.Request, userEntity database.User) {
+	feedFollowIdStr := chi.URLParam(r, "feedFollowId")
+	feedFollowId, err := uuid.Parse(feedFollowIdStr)
+	if err != nil {
+		respondWithError(w, 400, fmt.Sprintf("Couldn't parse feed_follow ID: %v", err))
+		return
+	}
+
+	err = apiCfg.DB.DeleteFeedFollow(r.Context(), database.DeleteFeedFollowParams{
+		ID:     feedFollowId,
+		UserID: userEntity.ID,
+	})
+	if err != nil {
+		respondWithError(w, 512, fmt.Sprintf("Couldn't unsubscribe user [%v] from the feed [%v]: %v", userEntity.ID, feedFollowId, err))
+		return
+	}
+
+	respondWithJson(w, 200, struct{}{})
+}
+
 
 func parseFeedFollowsParams(r *http.Request, w http.ResponseWriter) feedFollowsParams {
 	params := feedFollowsParams{}

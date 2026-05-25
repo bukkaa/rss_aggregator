@@ -12,3 +12,15 @@ order by created_at desc;
 select * from feeds 
 order by created_at desc;
 
+-- name: GetNextFeedsToFetch :many
+select * from feeds
+order by last_fetched_at asc nulls first
+limit $1;
+
+-- name: MarkFeedAsFetched :one
+
+update feeds
+set last_fetched_at = now() at time zone 'utc',
+    updated_at = now() at time zone 'utc'
+where id = $1
+returning *;
